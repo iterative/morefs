@@ -86,10 +86,10 @@ def sync_info(path, **kwargs):
 # pylint: disable=arguments-renamed
 
 
-def wrapped(fs):
+def wrapped(func):
     def inner(self, *args, **kwargs):
-        return fs(self, *args, **kwargs)
-    
+        return func(self, *args, **kwargs)
+
     return inner
 
 
