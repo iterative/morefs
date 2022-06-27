@@ -9,6 +9,7 @@ import aiofile
 import aiofiles.os
 from aiofiles.os import wrap  # type: ignore[attr-defined]
 from aiopath.scandir import EntryWrapper, scandir_async
+from fsspec import AbstractFileSystem
 from fsspec.asyn import AbstractBufferedFile, AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
@@ -41,10 +42,77 @@ async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
         await fdst_write(buf)
 
 
+def sync_info(path, **kwargs):
+    if isinstance(path, os.DirEntry):
+        out = path.stat(follow_symlinks=False)
+        link = path.is_symlink()
+        if path.is_dir(follow_symlinks=False):
+            t = "directory"
+        elif path.is_file(follow_symlinks=False):
+            t = "file"
+        else:
+            t = "other"
+        path = path.path
+    else:
+        out = os.stat(path, follow_symlinks=False)
+        link = stat.S_ISLNK(out.st_mode)
+        if link:
+            out = os.stat(path, follow_symlinks=True)
+        if stat.S_ISDIR(out.st_mode):
+            t = "directory"
+        elif stat.S_ISREG(out.st_mode):
+            t = "file"
+        else:
+            t = "other"
+    result = {
+        "name": path,
+        "size": out.st_size,
+        "type": t,
+        "created": out.st_ctime,
+        "islink": link,
+    }
+    for field in ["mode", "uid", "gid", "mtime"]:
+        result[field] = getattr(out, "st_" + field)
+    if result["islink"]:
+        result["destination"] = os.readlink(path)
+        try:
+            out2 = os.stat(path, follow_symlinks=True)
+            result["size"] = out2.st_size
+        except IOError:
+            result["size"] = 0
+    return result
+
+
 # pylint: disable=arguments-renamed
 
 
+def wrapped(fs):
+    def inner(self, *args, **kwargs):
+        return fs(self, *args, **kwargs)
+    
+    return inner
+
+
 class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
+    info = staticmethod(sync_info)
+    find = wrapped(AbstractFileSystem.find)
+    walk = wrapped(AbstractFileSystem.walk)
+    exists = wrapped(AbstractFileSystem.exists)
+    isdir = wrapped(AbstractFileSystem.isdir)
+    isfile = wrapped(AbstractFileSystem.isfile)
+    lexists = staticmethod(os.path.lexists)
+
+    async def _ls(self, path, detail=True, **kwargs):
+        if detail:
+            return [await self._info(f) async for f in scandir_async(path)]
+        return [os.path.join(path, f) for f in await aiofiles.os.listdir(path)]
+
+    def ls(self, path, detail=True, **kwargs):
+        if detail:
+            with os.scandir(path) as it:
+                return [sync_info(f) for f in it]
+        return [os.path.join(path, f) for f in os.listdir(path)]
+
     async def _info(self, path, **kwargs):
         if isinstance(path, os.DirEntry):
             path = EntryWrapper(path)
@@ -87,11 +155,6 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
                 result["size"] = 0
         return result
 
-    async def _ls(self, path, detail=True, **kwargs):
-        if detail:
-            return [await self._info(f) async for f in scandir_async(path)]
-        return [os.path.join(path, f) for f in await aiofiles.os.listdir(path)]
-
     async def _rm_file(self, path, **kwargs):
         await aiofiles.os.remove(path)
 
@@ -124,7 +187,7 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
             return await f.read()
 
     async def _pipe_file(self, path, value, **kwargs):
-        with self.open_async(path, "wb") as f:
+        async with self.open_async(path, "wb") as f:
             await f.write(value)
 
     async def _put_file(self, path1, path2, **kwargs):
@@ -137,7 +200,7 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
         if isinstance(
             path2, AbstractBufferedFile
         ) or asyncio.iscoroutinefunction(write_method):
-            with self.open_async(path1, "rb") as fsrc:
+            async with self.open_async(path1, "rb") as fsrc:
                 return await async_copy_to_fobj(fsrc, path2)
         return await async_copy_to_fobj(path1, path2)
 
