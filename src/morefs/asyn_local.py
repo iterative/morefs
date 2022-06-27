@@ -46,6 +46,8 @@ async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
 
 class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
     async def _info(self, path, **kwargs):
+        if isinstance(path, os.DirEntry):
+            path = EntryWrapper(path)
         if isinstance(path, EntryWrapper):
             out = await path.stat(follow_symlinks=False)
             link = await path.is_symlink()
