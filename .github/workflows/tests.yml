@@ -52,6 +52,7 @@ jobs:
 
     - name: Run tests
       run: nox -s $TEST_SESSION -- --cov-report=xml
+      shell: bash
       env:
         TEST_SESSION: ${{ matrix.nox_session || format('tests-{0}', matrix.pyv) }}
 
