@@ -1,4 +1,4 @@
-import os
+from os import fspath
 from unittest.mock import ANY
 
 import pytest
@@ -33,14 +33,15 @@ def test_strip(m):
     assert m._strip_protocol("/b/c/") == "/b/c"
 
 
-def test_put_single(m, tmpdir):
-    fn = os.path.join(str(tmpdir), "dir")
-    os.mkdir(fn)
-    open(os.path.join(fn, "abc"), "w").write("text")
-    m.put(fn, "/test")  # no-op, no files
+def test_put_single(m, tmp_path):
+    fn = tmp_path / "dir"
+    fn.mkdir()
+
+    (fn / "abc").write_bytes(b"text")
+    m.put(fspath(fn), "/test")  # no-op, no files
     assert not m.exists("/test/abc")
     assert not m.exists("/test/dir")
-    m.put(fn + "/", "/test", recursive=True)
+    m.put(fspath(fn), "/test", recursive=True)
     assert m.cat("/test/abc") == b"text"
 
 
