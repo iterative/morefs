@@ -8,13 +8,11 @@ welcomes contributions in the form of bug reports, feature requests, and pull re
 Here is a list of important resources for contributors:
 
 - `Source Code`_
-- `Documentation`_
 - `Issue Tracker`_
 - `Code of Conduct`_
 
 .. _Apache 2.0 license: https://opensource.org/licenses/Apache-2.0
 .. _Source Code: https://github.com/skshetry/morefs
-.. _Documentation: https://morefs.readthedocs.io/
 .. _Issue Tracker: https://github.com/skshetry/morefs/issues
 
 How to report a bug
