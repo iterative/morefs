@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/iterative/py-template",
-  "commit": "a697f2f5da9723747e37176cd44a44a6de6de641",
+  "commit": "f1ee970dd61d000f61cfd952a6578df645c518c8",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -13,13 +13,9 @@
       "version": "0.0.0",
       "copyright_year": "2022",
       "license": "Apache-2.0",
+      "docs": "False",
       "short_description": "More FSSpec filesystems",
       "development_status": "Development Status :: 4 - Beta",
-      "_copy_without_render": [
-        ".github/workflows/release.yaml",
-        ".github/workflows/tests.yaml",
-        ".github/workflows/update-template.yaml"
-      ],
       "_template": "https://github.com/iterative/py-template"
     }
   },
