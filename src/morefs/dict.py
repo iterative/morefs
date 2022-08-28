@@ -7,6 +7,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from fsspec import AbstractFileSystem
 from fsspec.implementations.memory import MemoryFile
 
+ContainerOrFile = Union[Dict[str, Dict], "DictFile"]
+
 
 class Store(dict):
     def __init__(self, paths: Iterable[str] = ()) -> None:
@@ -29,7 +31,9 @@ class Store(dict):
             raise ValueError("cannot overwrite - item exists")
         child[key] = value
 
-    def get(self, paths: Iterable[str]):  # type: ignore[override]
+    def get(  # type: ignore[override]
+        self, paths: Iterable[str]
+    ) -> "ContainerOrFile":
         child = self
         for path in paths:
             child = child[path]
@@ -70,7 +74,11 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         self.store = store
 
     def _info(
-        self, path: str, item, file: bool = False, **kwargs: Any
+        self,
+        path: str,
+        item: ContainerOrFile,
+        file: bool = False,
+        **kwargs: Any
     ) -> Dict[str, Any]:
         if isinstance(item, dict):
             return {"name": path, "size": 0, "type": "directory"}
@@ -120,13 +128,16 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
                 return [normpath]
             return [self._info(normpath, item)]
 
-        out = {
-            self.join_paths((*paths, key)): value
-            for key, value in sorted(item.items())
-        }
+        entries: Iterable[Tuple[str, ContainerOrFile]] = item.items()
+        if kwargs.get("sort"):
+            entries = sorted(entries)
+
         if not detail:
-            return list(out)
-        return [self._info(file, value) for file, value in out.items()]
+            return [self.join_paths((*paths, key)) for key, _ in entries]
+        return [
+            self._info(self.join_paths((*paths, key)), value)
+            for key, value in entries
+        ]
 
     def _rm(self, path: str) -> None:
         info = self.info(path)
@@ -223,17 +234,13 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
             if mode in ["rb", "ab", "rb+"]:
                 raise
 
-        if mode != "wb":
-            assert "file" in info
-
         if mode == "wb":
-            file = DictFile(self, normpath)
+            file = DictFile(self, normpath, data=kwargs.get("data"))
             if not self._intrans:
                 file.commit()
-            return file
-
-        file = info["file"]
-        file.seek(0, os.SEEK_END if mode == "ab" else os.SEEK_SET)
+        else:
+            file = info["file"]
+            file.seek(0, os.SEEK_END if mode == "ab" else os.SEEK_SET)
         return file
 
     def cp_file(self, path1: str, path2: str, **kwargs: Any) -> None:
@@ -243,23 +250,11 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
             self.mkdir(path2)
             return
 
-        with src, self.open(path2, "wb") as dst:
-            dst.write(src.getbuffer())
+        file = DictFile(self, path2, src.getvalue())  # implicit copy
+        file.commit()
 
     def created(self, path: str) -> Optional[datetime]:
         return self.info(path).get("created")
-
-    def set_file(self, path: str, file: "DictFile") -> None:
-        paths = self.path_parts(path)
-        normpath = self.join_paths(paths)
-        try:
-            self.store.set(paths, file, overwrite=True)
-        except TypeError as exc:
-            raise oserror(errno.ENOTDIR, normpath) from exc
-        except ValueError as exc:
-            raise oserror(errno.EEXIST, normpath) from exc
-        except KeyError as exc:
-            raise oserror(errno.ENOENT, normpath) from exc
 
     def rm(
         self,
@@ -286,18 +281,29 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
             else:
                 self.rmdir(p)
 
+    def pipe_file(self, path: str, value, **kwargs) -> None:
+        self.open(path, "wb", data=value)
+
 
 class DictFile(MemoryFile):
     def commit(self) -> None:
-        self.fs.set_file(self.path, self)
+        fs = self.fs
+        paths = fs.path_parts(self.path)
+        try:
+            fs.store.set(paths, self, overwrite=True)
+        except TypeError as exc:
+            raise oserror(errno.ENOTDIR, self.path) from exc
+        except ValueError as exc:
+            raise oserror(errno.EEXIST, self.path) from exc
+        except KeyError as exc:
+            raise oserror(errno.ENOENT, self.path) from exc
 
     def to_json(self, file: bool = False) -> Dict[str, Any]:
-        size = self.size if hasattr(self, "size") else self.getbuffer().nbytes
         details = {
             "name": self.path,
-            "size": size,
+            "size": self.size,
             "type": "file",
-            "created": getattr(self, "created", None),
+            "created": self.created,
         }
         if file:
             details["file"] = self
