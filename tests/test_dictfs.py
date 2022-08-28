@@ -56,9 +56,9 @@ def test_ls(dfs):
     dfs.touch("/dir/dir1/cfile")
 
     assert dfs.ls("/", False) == ["/dir"]
-    assert dfs.ls("/dir", False) == ["/dir/afile", "/dir/dir1"]
-    assert dfs.ls("/dir", True)[0]["type"] == "file"
-    assert dfs.ls("/dir", True)[1]["type"] == "directory"
+    assert dfs.ls("/dir", False) == ["/dir/dir1", "/dir/afile"]
+    assert dfs.ls("/dir", True)[0]["type"] == "directory"
+    assert dfs.ls("/dir", True)[1]["type"] == "file"
 
     assert len(dfs.ls("/dir/dir1")) == 2
     assert dfs.ls("/dir/afile") == ["/dir/afile"]
