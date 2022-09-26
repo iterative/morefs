@@ -13,15 +13,10 @@ from fsspec import AbstractFileSystem
 from fsspec.asyn import AbstractBufferedFile, AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
-aiofiles.os.listdir = wrap(os.listdir)  # type: ignore[attr-defined]
-aiofiles.os.link = wrap(os.link)  # type: ignore[attr-defined]
-aiofiles.os.symlink = wrap(os.symlink)  # type: ignore[attr-defined]
-aiofiles.os.islink = wrap(os.path.islink)  # type: ignore[attr-defined]
-aiofiles.os.readlink = wrap(os.readlink)  # type: ignore[attr-defined]
-aiofiles.os.scandir = wrap(os.scandir)  # type: ignore[attr-defined]
-aiofiles.os.lexists = wrap(os.path.lexists)  # type: ignore[attr-defined]
 aiofiles.os.chmod = wrap(os.chmod)  # type: ignore[attr-defined]
 aiofiles.os.utime = wrap(os.utime)  # type: ignore[attr-defined]
+aiofiles.os.path.islink = wrap(os.path.islink)  # type: ignore[attr-defined]
+aiofiles.os.path.lexists = wrap(os.path.lexists)  # type: ignore[attr-defined]
 async_rmtree = wrap(shutil.rmtree)  # type: ignore[attr-defined]
 async_move = wrap(shutil.move)  # type: ignore[attr-defined]
 async_copyfile = wrap(shutil.copyfile)  # type: ignore[attr-defined]
@@ -215,7 +210,7 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
         await async_move(path1, path2)
 
     async def _lexists(self, path, **kwargs):
-        return await aiofiles.os.lexists(path)
+        return await aiofiles.os.path.lexists(path)
 
     async def _created(self, path):
         info = await self._info(path=path)
@@ -249,7 +244,7 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
         await aiofiles.os.symlink(src, dst)
 
     async def _islink(self, path):
-        return await aiofiles.os.islink(path)
+        return await aiofiles.os.path.islink(path)
 
     async def _touch(self, path, **kwargs):
         if self._exists(path):
