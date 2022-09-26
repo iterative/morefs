@@ -1,14 +1,13 @@
 import asyncio
 import datetime
 import errno
+import functools
 import os
 import shutil
-import stat
 
 import aiofile
 import aiofiles.os
 from aiofiles.os import wrap  # type: ignore[attr-defined]
-from aiopath.scandir import EntryWrapper, scandir_async
 from fsspec import AbstractFileSystem
 from fsspec.asyn import AbstractBufferedFile, AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
@@ -37,51 +36,11 @@ async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
         await fdst_write(buf)
 
 
-def sync_info(path, **kwargs):
-    if isinstance(path, os.DirEntry):
-        out = path.stat(follow_symlinks=False)
-        link = path.is_symlink()
-        if path.is_dir(follow_symlinks=False):
-            t = "directory"
-        elif path.is_file(follow_symlinks=False):
-            t = "file"
-        else:
-            t = "other"
-        path = path.path
-    else:
-        out = os.stat(path, follow_symlinks=False)
-        link = stat.S_ISLNK(out.st_mode)
-        if link:
-            out = os.stat(path, follow_symlinks=True)
-        if stat.S_ISDIR(out.st_mode):
-            t = "directory"
-        elif stat.S_ISREG(out.st_mode):
-            t = "file"
-        else:
-            t = "other"
-    result = {
-        "name": path,
-        "size": out.st_size,
-        "type": t,
-        "created": out.st_ctime,
-        "islink": link,
-    }
-    for field in ["mode", "uid", "gid", "mtime"]:
-        result[field] = getattr(out, "st_" + field)
-    if result["islink"]:
-        result["destination"] = os.readlink(path)
-        try:
-            out2 = os.stat(path, follow_symlinks=True)
-            result["size"] = out2.st_size
-        except IOError:
-            result["size"] = 0
-    return result
-
-
 # pylint: disable=arguments-renamed
 
 
 def wrapped(func):
+    @functools.wraps(func)
     def inner(self, *args, **kwargs):
         return func(self, *args, **kwargs)
 
@@ -89,66 +48,22 @@ def wrapped(func):
 
 
 class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
-    info = staticmethod(sync_info)
     find = wrapped(AbstractFileSystem.find)
     walk = wrapped(AbstractFileSystem.walk)
     exists = wrapped(AbstractFileSystem.exists)
     isdir = wrapped(AbstractFileSystem.isdir)
     isfile = wrapped(AbstractFileSystem.isfile)
-    lexists = staticmethod(os.path.lexists)
+    lexists = staticmethod(LocalFileSystem.lexists)
+
+    ls = wrapped(LocalFileSystem.ls)
+    info = wrapped(LocalFileSystem.info)
+    _info = wrap(LocalFileSystem.info)
 
     async def _ls(self, path, detail=True, **kwargs):
         if detail:
-            return [await self._info(f) async for f in scandir_async(path)]
+            entries = await aiofiles.os.scandir(path)
+            return [await self._info(f) for f in entries]
         return [os.path.join(path, f) for f in await aiofiles.os.listdir(path)]
-
-    def ls(self, path, detail=True, **kwargs):
-        if detail:
-            with os.scandir(path) as it:
-                return [sync_info(f) for f in it]
-        return [os.path.join(path, f) for f in os.listdir(path)]
-
-    async def _info(self, path, **kwargs):
-        if isinstance(path, os.DirEntry):
-            path = EntryWrapper(path)
-        if isinstance(path, EntryWrapper):
-            out = await path.stat(follow_symlinks=False)
-            link = await path.is_symlink()
-            if await path.is_dir(follow_symlinks=False):
-                t = "directory"
-            elif await path.is_file(follow_symlinks=False):
-                t = "file"
-            else:
-                t = "other"
-            path = path.path
-        else:
-            out = await aiofiles.os.stat(path, follow_symlinks=False)
-            link = stat.S_ISLNK(out.st_mode)
-            if link:
-                out = await aiofiles.os.stat(path, follow_symlinks=True)
-            if stat.S_ISDIR(out.st_mode):
-                t = "directory"
-            elif stat.S_ISREG(out.st_mode):
-                t = "file"
-            else:
-                t = "other"
-        result = {
-            "name": path,
-            "size": out.st_size,
-            "type": t,
-            "created": out.st_ctime,
-            "islink": link,
-        }
-        for field in ["mode", "uid", "gid", "mtime"]:
-            result[field] = getattr(out, "st_" + field)
-        if result["islink"]:
-            result["destination"] = await aiofiles.os.readlink(path)
-            try:
-                out2 = await aiofiles.os.stat(path, follow_symlinks=True)
-                result["size"] = out2.st_size
-            except IOError:
-                result["size"] = 0
-        return result
 
     async def _rm_file(self, path, **kwargs):
         await aiofiles.os.remove(path)
@@ -217,7 +132,7 @@ class AsyncLocalFileSystem(AsyncFileSystem):  # pylint: disable=abstract-method
         return datetime.datetime.utcfromtimestamp(info["created"])
 
     async def _modified(self, path):
-        info = await self.info(path=path)
+        info = await self._info(path=path)
         return datetime.datetime.utcfromtimestamp(info["mtime"])
 
     async def _rm(
