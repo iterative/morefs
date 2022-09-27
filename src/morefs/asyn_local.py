@@ -3,6 +3,7 @@ import errno
 import os
 import posixpath
 import shutil
+from contextlib import asynccontextmanager
 
 import aiofile
 import aiofiles.os
@@ -10,11 +11,11 @@ from aiofiles.os import wrap  # type: ignore[attr-defined]
 from fsspec.asyn import AbstractAsyncStreamedFile, AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
-aiofiles.os.utime = wrap(os.utime)  # type: ignore[attr-defined]
-aiofiles.os.path.islink = wrap(os.path.islink)  # type: ignore[attr-defined]
-async_rmtree = wrap(shutil.rmtree)  # type: ignore[attr-defined]
-async_copyfile = wrap(shutil.copyfile)  # type: ignore[attr-defined]
-async_copy_to_fobj = wrap(LocalFileSystem.get_file)
+async_utime = wrap(os.utime)
+async_islink = wrap(os.path.islink)
+async_rmtree = wrap(shutil.rmtree)
+async_copyfile = wrap(shutil.copyfile)
+async_get_file = wrap(LocalFileSystem.get_file)
 
 
 async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
@@ -28,15 +29,15 @@ async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
 
 
 class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
+    _chmod = wrap(LocalFileSystem.chmod)
+    _created = wrap(LocalFileSystem.created)
     _info = wrap(LocalFileSystem.info)
     _lexists = wrap(LocalFileSystem.lexists)
-    _created = wrap(LocalFileSystem.created)
-    _modified = wrap(LocalFileSystem.modified)
-    _chmod = wrap(LocalFileSystem.chmod)
-    _mv_file = wrap(LocalFileSystem.mv_file)
     _makedirs = wrap(LocalFileSystem.makedirs)
-    _rmdir = wrap(LocalFileSystem.rmdir)
+    _modified = wrap(LocalFileSystem.modified)
+    _mv_file = wrap(LocalFileSystem.mv_file)
     _rm_file = wrap(LocalFileSystem.rm_file)
+    _rmdir = wrap(LocalFileSystem.rmdir)
 
     async def _ls(self, path, detail=True, **kwargs):
         path = self._strip_protocol(path)
@@ -87,11 +88,13 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
                 return await copy_asyncfileobj(fsrc, path2)
 
         path1 = self._strip_protocol(path1)
-        return await async_copy_to_fobj(self, path1, path2)
+        return await async_get_file(self, path1, path2)
 
     async def _cp_file(self, path1, path2, **kwargs):
         path1 = self._strip_protocol(path1)
         path2 = self._strip_protocol(path2)
+        if self.auto_mkdir:
+            await self._makedirs(self._parent(path2), exist_ok=True)
         if await self._isfile(path1):
             return await async_copyfile(path1, path2)
         if await self._isdir(path1):
@@ -128,17 +131,22 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
 
     async def _islink(self, path):
         path = self._strip_protocol(path)
-        return await aiofiles.os.path.islink(path)
+        return await async_islink(path)
 
     async def _touch(self, path, **kwargs):
+        if self.auto_mkdir:
+            await self._makedirs(self._parent(path), exist_ok=True)
         if await self._exists(path):
             path = self._strip_protocol(path)
-            return await aiofiles.os.utime(path, None)
+            return await async_utime(path, None)
         async with self.open_async(path, "a"):
             pass
 
-    def open_async(
-        self, path, mode="rb", **kwargs
-    ):  # pylint: disable=invalid-overridden-method
+    @asynccontextmanager
+    async def open_async(self, path, mode="rb", **kwargs):
         path = self._strip_protocol(path)
-        return aiofile.async_open(path, mode, **kwargs)
+        if self.auto_mkdir and "w" in mode:
+            await self._makedirs(self._parent(path), exist_ok=True)
+
+        async with aiofile.async_open(path, mode, **kwargs) as f:
+            yield f
