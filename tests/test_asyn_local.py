@@ -27,7 +27,7 @@ async def test_ls(tmp_path, localfs, fs):
     localfs.pipe(struct)
 
     assert set(await fs._ls(tmp_path, detail=False)) == {
-        fspath(tmp_path / f) for f in ["foo", "bar", "dir"]
+        localfs._strip_protocol(tmp_path / f) for f in ["foo", "bar", "dir"]
     }
     assert await fs._ls(tmp_path, detail=False) == localfs.ls(
         tmp_path, detail=False
@@ -64,7 +64,7 @@ def test_sync_methods(tmp_path, localfs, fs):
     localfs.pipe(struct)
 
     assert set(fs.ls(tmp_path, detail=False)) == {
-        fspath(tmp_path / f) for f in ["foo", "bar", "dir"]
+        localfs._strip_protocol(tmp_path / f) for f in ["foo", "bar", "dir"]
     }
     assert fs.ls(tmp_path, detail=False) == localfs.ls(tmp_path, detail=False)
 
@@ -175,7 +175,7 @@ async def test_rm(tmp_path, fs):
     await fs._rm(tmp_path / "bar")
     assert not await fs._exists(tmp_path / "bar")
 
-    with pytest.raises(IsADirectoryError):
+    with pytest.raises((IsADirectoryError, PermissionError)):
         await fs._rm(tmp_path / "dir")
 
     await fs._rm(tmp_path / "dir", recursive=True)
