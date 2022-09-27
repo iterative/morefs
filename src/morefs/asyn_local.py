@@ -29,6 +29,9 @@ async def copy_asyncfileobj(fsrc, fdst, length=shutil.COPY_BUFSIZE):
 
 
 class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
+    # temporary hack, upstream should support `mirror_sync_methods` instead.
+    async_impl = False
+
     _chmod = wrap(LocalFileSystem.chmod)
     _created = wrap(LocalFileSystem.created)
     _info = wrap(LocalFileSystem.info)
