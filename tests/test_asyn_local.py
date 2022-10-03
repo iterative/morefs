@@ -1,4 +1,5 @@
 from os import fspath
+from pathlib import Path
 
 import pytest
 from fsspec.implementations.local import LocalFileSystem
@@ -87,23 +88,6 @@ def test_sync_methods(tmp_path, localfs, fs):
 
 
 @pytest.mark.asyncio
-async def test_mkdir(tmp_path, fs):
-    await fs._mkdir(tmp_path / "dir", create_parents=False)
-    assert await fs._isdir(tmp_path / "dir")
-
-    await fs._mkdir(tmp_path / "dir2" / "sub")
-    assert await fs._isdir(tmp_path / "dir2")
-    assert await fs._isdir(tmp_path / "dir2" / "sub")
-
-
-@pytest.mark.asyncio
-async def test_mkdir_twice_failed(tmp_path, fs):
-    await fs._mkdir(tmp_path / "dir")
-    with pytest.raises(FileExistsError):
-        await fs._mkdir(tmp_path / "dir")
-
-
-@pytest.mark.asyncio
 async def test_open_async(tmp_path, fs):
     async with fs.open_async(tmp_path / "file", mode="wb") as f:
         pass
@@ -114,32 +98,6 @@ async def test_open_async(tmp_path, fs):
 
     async with fs.open_async(tmp_path / "file") as f:
         assert await f.read() == b"contents"
-
-
-@pytest.mark.asyncio
-async def test_pipe_cat_put(tmp_path, fs):
-    value = b"foo" * 1000
-    await fs._pipe_file(tmp_path / "foo", value)
-    assert await fs._cat_file(tmp_path / "foo") == value
-    assert await fs._cat_file(tmp_path / "foo", start=100) == value[100:]
-    assert (
-        await fs._cat_file(tmp_path / "foo", start=100, end=1000)
-        == value[100:1000]
-    )
-
-    await fs._put_file(tmp_path / "foo", tmp_path / "bar")
-    assert await fs._isfile(tmp_path / "bar")
-
-
-@pytest.mark.asyncio
-async def test_cp_file(tmp_path, fs):
-    await fs._mkdir(tmp_path / "dir")
-    await fs._cp_file(tmp_path / "dir", tmp_path / "dir2")
-    assert await fs._isdir(tmp_path / "dir")
-
-    await fs._pipe_file(tmp_path / "foo", b"foo")
-    assert await fs._cp_file(tmp_path / "foo", tmp_path / "bar")
-    assert await fs._cat_file(tmp_path / "bar") == b"foo"
 
 
 @pytest.mark.asyncio
@@ -162,31 +120,16 @@ async def test_get_file(tmp_path, fs):
     assert await fs._cat_file(tmp_path / "file3") == b"foo"
 
 
+@pytest.mark.parametrize("transform", [Path, fspath])
 @pytest.mark.asyncio
-async def test_rm(tmp_path, fs):
+async def test_rm(tmp_path, fs, transform):
     await fs._pipe_file(tmp_path / "foo", b"foo")
-    await fs._pipe_file(tmp_path / "bar", b"bar")
-    await fs._mkdir(tmp_path / "dir")
-    await fs._pipe_file(tmp_path / "dir" / "file", b"file")
-
-    await fs._rm_file(tmp_path / "foo")
+    await fs._rm(transform(tmp_path / "foo"))
     assert not await fs._exists(tmp_path / "foo")
 
-    await fs._rm(tmp_path / "bar")
-    assert not await fs._exists(tmp_path / "bar")
-
-    with pytest.raises((IsADirectoryError, PermissionError)):
-        await fs._rm(tmp_path / "dir")
-
-    await fs._rm(tmp_path / "dir", recursive=True)
+    await fs._mkdir(tmp_path / "dir")
+    await fs._rm(transform(tmp_path / "dir"), recursive=True)
     assert not await fs._exists(tmp_path / "dir")
-
-
-@pytest.mark.asyncio
-async def test_try_rm_recursive_cwd(tmp_path, monkeypatch, fs):
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(ValueError):
-        await fs._rm(tmp_path, recursive=True)
 
 
 @pytest.mark.asyncio
@@ -204,9 +147,11 @@ async def test_symlink(tmp_path, fs):
 
 
 @pytest.mark.asyncio
-async def test_touch(tmp_path, fs):
-    await fs._touch(tmp_path / "file")
-    assert await fs._exists(tmp_path / "file")
-    created = await fs._created(tmp_path / "file")
-    await fs._touch(tmp_path / "file")
-    assert await fs._modified(tmp_path / "file") >= created
+async def test_auto_mkdir_on_open_async(tmp_path):
+    fs = AsyncLocalFileSystem(auto_mkdir=True)
+    async with fs.open_async(tmp_path / "dir" / "file", mode="wb") as f:
+        await f.write(b"contents")
+
+    assert await fs._isdir(tmp_path / "dir")
+    assert await fs._isfile(tmp_path / "dir" / "file")
+    assert await fs._cat_file(tmp_path / "dir" / "file") == b"contents"
