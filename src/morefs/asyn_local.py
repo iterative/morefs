@@ -48,11 +48,15 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
     _mv_file = wrap(LocalFileSystem.mv_file)
     _pipe_file = wrap(LocalFileSystem.pipe_file)
     _put_file = wrap(LocalFileSystem.put_file)
+    _read_bytes = wrap(LocalFileSystem.read_bytes)
+    _read_text = wrap(LocalFileSystem.read_text)
     _rm = wrap(LocalFileSystem.rm)
     _rm_file = wrap(LocalFileSystem.rm_file)
     _rmdir = wrap(LocalFileSystem.rmdir)
     _touch = wrap(LocalFileSystem.touch)
     _symlink = wrap(LocalFileSystem.symlink)
+    _write_bytes = wrap(LocalFileSystem.write_bytes)
+    _write_text = wrap(LocalFileSystem.write_text)
     sign = LocalFileSystem.sign
 
     async def _get_file(
