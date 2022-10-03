@@ -1,4 +1,3 @@
-import os
 import shutil
 import sys
 from asyncio import get_running_loop, iscoroutinefunction
@@ -39,7 +38,9 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
     _find_async = wrap(LocalFileSystem.find)
     _get_file_async = wrap(LocalFileSystem.get_file)
     _info = wrap(LocalFileSystem.info)
+    _islink = wrap(LocalFileSystem.islink)
     _lexists = wrap(LocalFileSystem.lexists)
+    _link = wrap(LocalFileSystem.link)
     _ls = wrap(LocalFileSystem.ls)
     _makedirs = wrap(LocalFileSystem.makedirs)
     _mkdir = wrap(LocalFileSystem.mkdir)
@@ -47,9 +48,11 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
     _mv_file = wrap(LocalFileSystem.mv_file)
     _pipe_file = wrap(LocalFileSystem.pipe_file)
     _put_file = wrap(LocalFileSystem.put_file)
+    _rm = wrap(LocalFileSystem.rm)
     _rm_file = wrap(LocalFileSystem.rm_file)
     _rmdir = wrap(LocalFileSystem.rmdir)
     _touch = wrap(LocalFileSystem.touch)
+    _symlink = wrap(LocalFileSystem.symlink)
     sign = LocalFileSystem.sign
 
     async def _get_file(
@@ -65,29 +68,6 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
                 if not buf:
                     break
                 await dst.write(buf)
-
-    def rm(self, path, recursive=False, maxdepth=None):
-        if isinstance(path, os.PathLike):
-            path = [path]
-        super().rm(path, recursive=recursive, maxdepth=maxdepth)
-
-    def link(self, src, dst, **kwargs):
-        src = self._strip_protocol(src)
-        dst = self._strip_protocol(dst)
-        os.link(src, dst, **kwargs)
-
-    def symlink(self, src, dst, **kwargs):
-        src = self._strip_protocol(src)
-        dst = self._strip_protocol(dst)
-        os.symlink(src, dst, **kwargs)
-
-    def islink(self, path) -> bool:
-        return os.path.islink(self._strip_protocol(path))
-
-    _rm = wrap(rm)
-    _link = wrap(link)
-    _symlink = wrap(symlink)
-    _islink = wrap(islink)
 
     @asynccontextmanager
     async def open_async(self, path, mode="rb", **kwargs):
