@@ -1,5 +1,4 @@
 from os import fspath
-from pathlib import Path
 
 import pytest
 from fsspec.implementations.local import LocalFileSystem
@@ -118,32 +117,6 @@ async def test_get_file(tmp_path, fs):
     with (tmp_path / "file3").open(mode="wb") as f:
         await fs._get_file(tmp_path / "foo", f)
     assert await fs._cat_file(tmp_path / "file3") == b"foo"
-
-
-@pytest.mark.parametrize("transform", [Path, fspath])
-@pytest.mark.asyncio
-async def test_rm(tmp_path, fs, transform):
-    await fs._pipe_file(tmp_path / "foo", b"foo")
-    await fs._rm(transform(tmp_path / "foo"))
-    assert not await fs._exists(tmp_path / "foo")
-
-    await fs._mkdir(tmp_path / "dir")
-    await fs._rm(transform(tmp_path / "dir"), recursive=True)
-    assert not await fs._exists(tmp_path / "dir")
-
-
-@pytest.mark.asyncio
-async def test_link(tmp_path, fs):
-    fs.pipe_file(tmp_path / "foo", b"foo")
-    await fs._link(tmp_path / "foo", tmp_path / "foo_link")
-    assert (tmp_path / "foo_link").stat().st_nlink > 1
-
-
-@pytest.mark.asyncio
-async def test_symlink(tmp_path, fs):
-    fs.pipe_file(tmp_path / "foo", b"foo")
-    await fs._symlink(tmp_path / "foo", tmp_path / "foo_link")
-    assert await fs._islink(tmp_path / "foo_link")
 
 
 @pytest.mark.asyncio
