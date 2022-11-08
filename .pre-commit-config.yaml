@@ -27,9 +27,7 @@ repos:
     rev: v2.2.1
     hooks:
       - id: codespell
-        args:
-        - --ignore-words-list
-        - fo,cachable
+        additional_dependencies: ["tomli"]
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.38.0
     hooks:
