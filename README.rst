@@ -35,10 +35,10 @@ Features
 --------
 
 *morefs* provides standalone fsspec-based filesystems like:
-# ``AsyncLocalFileSystem`` that provides async implementation of ``LocalFileSystem``.
-# In-memory filesystems ``DictFileSystem`` built on nested dictionaries and ``MemFS`` built on tries,
-and are much faster than fsspec's ``MemoryFileSystem``.
-# ``OverlayFileSystem`` that allows to overlay multiple fsspec-based filesystems.
+
+* ``AsyncLocalFileSystem`` that provides async implementation of ``LocalFileSystem``.
+* In-memory filesystems ``DictFileSystem`` built on nested dictionaries and ``MemFS`` built on tries, and are much faster than fsspec's ``MemoryFileSystem``.
+* ``OverlayFileSystem`` that allows to overlay multiple fsspec-based filesystems.
 
 Installation
 ------------
