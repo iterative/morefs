@@ -28,9 +28,11 @@ class MemFS(AbstractFileSystem):  # pylint: disable=abstract-method
         if filelike:
             return {
                 "name": path,
-                "size": filelike.size
-                if hasattr(filelike, "size")
-                else filelike.getbuffer().nbytes,
+                "size": (
+                    filelike.size
+                    if hasattr(filelike, "size")
+                    else filelike.getbuffer().nbytes
+                ),
                 "type": "file",
                 "created": getattr(filelike, "created", None),
             }
