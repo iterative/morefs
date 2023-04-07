@@ -29,6 +29,25 @@ def wrap(func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
 
 
 class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
+    """Async implementation of LocalFileSystem.
+
+    This filesystem provides both async and sync methods. The sync methods are not
+    overridden and use LocalFileSystem's implementation.
+
+    The async methods run the respective sync methods in a threadpool executor.
+    It also provides open_async() method that supports asynchronous file operations,
+    using `aiofile`_.
+
+    Note that some async methods like _find may call these wrapped async methods
+    many times, and might have high overhead.
+    In that case, it might be faster to run the whole operation in a threadpool,
+    which is available as `_*_async()` versions of the API.
+    eg: _find_async()/_get_file_async, etc.
+
+    .. aiofile:
+        https://github.com/mosquito/aiofile
+    """
+
     mirror_sync_methods = False
 
     _cat_file = wrap(LocalFileSystem.cat_file)
