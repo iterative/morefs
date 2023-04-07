@@ -9,11 +9,12 @@ import fsspec
 class OverlayFileSystem(fsspec.AbstractFileSystem):
     cachable = False
 
-    def __init__(self, *fses, **kwargs):
+    def __init__(self, *fses: fsspec.AbstractFileSystem, **kwargs):
         storage_options = {
             key: value for key, value in kwargs.items() if key.startswith("fs_")
         }
         self.fses: List[fsspec.AbstractFileSystem] = list(fses)
+        self.fses.extend(kwargs.pop("filesystems", []))
         for proto, options in kwargs.items():
             if proto.startswith("fs_"):
                 continue
@@ -77,9 +78,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
     def _raise_readonly(path, *args, **kwargs):
         raise OSError(errno.EROFS, os.strerror(errno.EROFS), path)
 
-    info = _iterate_fs_with("info")
-    created = _iterate_fs_with("created")
-    modified = _iterate_fs_with("modified")
+    info = _iterate_fs_with("info")  # pylint: disable=no-value-for-parameter
+    created = _iterate_fs_with("created")  # pylint: disable=no-value-for-parameter
+    modified = _iterate_fs_with("modified")  # pylint: disable=no-value-for-parameter
 
     def mkdir(self, path, create_parents=True, **kwargs):
         # if create_parents is False:
@@ -155,3 +156,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
 
     def sign(self, path, expiration=100, **kwargs):
         return self.upper_fs.sign(path, expiration, **kwargs)
+
+    if hasattr(fsspec.AbstractFileSystem, "fsid"):
+
+        @property
+        def fsid(self):
+            return "overlay_" + "+".join(fs.fsid for fs in self.fses)

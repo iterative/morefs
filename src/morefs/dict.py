@@ -63,7 +63,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         path = path.lstrip("/").rstrip("/")
         return "/" + path if path else cls.root_marker
 
-    def __init__(self, store: Store = None) -> None:
+    def __init__(self, store: Optional[Store] = None) -> None:
         super().__init__()
         if store is None:
             store = Store()
@@ -251,7 +251,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         self,
         path: Union[str, List[str]],
         recursive: bool = False,
-        maxdepth: int = None,
+        maxdepth: Optional[int] = None,
     ) -> None:
         if isinstance(path, str):
             paths = [path]
