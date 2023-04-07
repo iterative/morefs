@@ -91,9 +91,9 @@ and acts more like a real LocalFileSystem.
 
 .. code:: python
 
-    from morefs.dictfs import DictFileSystem
+    from morefs.dict import filesystem
 
-    fs = DictFileSystem()
+    fs = DictFS()
 
 
 MemFS
@@ -103,7 +103,7 @@ MemFS is a trie-based in-memory filesystem, and acts like a bucket storage.
 
 .. code:: python
 
-    from morefs.memfs import MemFS
+    from morefs.memory import MemFS
 
     fs = MemFS()
 
