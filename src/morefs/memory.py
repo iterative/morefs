@@ -54,9 +54,7 @@ class MemFS(AbstractFileSystem):  # pylint: disable=abstract-method
         except KeyError as exc:
             if path in ("", "/"):
                 return []
-            raise FileNotFoundError(
-                errno.ENOENT, "No such file", path
-            ) from exc
+            raise FileNotFoundError(errno.ENOENT, "No such file", path) from exc
 
         return out
 
@@ -87,9 +85,7 @@ class MemFS(AbstractFileSystem):  # pylint: disable=abstract-method
         for p in paths:
             self.store.pop(p, None)
 
-    def _open(  # pylint: disable=arguments-differ
-        self, path, mode="rb", **kwargs
-    ):
+    def _open(self, path, mode="rb", **kwargs):  # pylint: disable=arguments-differ
         path = self._strip_protocol(path)
         try:
             info = self.info(path)

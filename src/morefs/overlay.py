@@ -11,9 +11,7 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
 
     def __init__(self, *fses, **kwargs):
         storage_options = {
-            key: value
-            for key, value in kwargs.items()
-            if key.startswith("fs_")
+            key: value for key, value in kwargs.items() if key.startswith("fs_")
         }
         self.fses: List[fsspec.AbstractFileSystem] = list(fses)
         for proto, options in kwargs.items():
@@ -86,14 +84,10 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
     def mkdir(self, path, create_parents=True, **kwargs):
         # if create_parents is False:
         if self.exists(path):
-            raise FileExistsError(
-                errno.EEXIST, os.strerror(errno.EEXIST), path
-            )
+            raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), path)
         parent = self._parent(path)
         if not create_parents and not self.isdir(parent):
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), path
-            )
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
         self.upper_fs.mkdir(path, create_parents=True, **kwargs)
 
     def makedirs(self, path, exist_ok=False):
@@ -113,18 +107,14 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
                 break
 
         if not src_fs:
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), path1
-            )
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path1)
         if src_fs == self.upper_fs:
             return src_fs.cp_file(path1, path2)
 
         with src_fs.open(path1) as src, self.upper_fs.open(path2, "wb") as dst:
             shutil.copyfileobj(src, dst)
 
-    def _open(
-        self, path, mode="rb", **kwargs
-    ):  # pylint: disable=arguments-differ
+    def _open(self, path, mode="rb", **kwargs):  # pylint: disable=arguments-differ
         if "rb" in mode:
             for fs in self.fses:
                 try:

@@ -29,23 +29,17 @@ async def test_ls(tmp_path, localfs, fs):
     assert set(await fs._ls(tmp_path, detail=False)) == {
         localfs._strip_protocol(tmp_path / f) for f in ["foo", "bar", "dir"]
     }
-    assert await fs._ls(tmp_path, detail=False) == localfs.ls(
-        tmp_path, detail=False
-    )
+    assert await fs._ls(tmp_path, detail=False) == localfs.ls(tmp_path, detail=False)
 
     assert await fs._info(tmp_path / "foo") == localfs.info(tmp_path / "foo")
     assert await fs._info(tmp_path / "dir") == localfs.info(tmp_path / "dir")
 
-    assert await fs._ls(tmp_path, detail=True) == localfs.ls(
-        tmp_path, detail=True
-    )
+    assert await fs._ls(tmp_path, detail=True) == localfs.ls(tmp_path, detail=True)
 
     assert await fs._find(tmp_path, detail=False) == localfs.find(
         tmp_path, detail=False
     )
-    assert await fs._find(tmp_path, detail=True) == localfs.find(
-        tmp_path, detail=True
-    )
+    assert await fs._find(tmp_path, detail=True) == localfs.find(tmp_path, detail=True)
 
     assert await fs._isfile(tmp_path / "foo")
     assert await fs._isdir(tmp_path / "dir")
@@ -72,12 +66,8 @@ def test_sync_methods(tmp_path, localfs, fs):
     assert fs.info(tmp_path / "dir") == localfs.info(tmp_path / "dir")
 
     assert fs.ls(tmp_path, detail=True) == localfs.ls(tmp_path, detail=True)
-    assert fs.find(tmp_path, detail=False) == localfs.find(
-        tmp_path, detail=False
-    )
-    assert fs.find(tmp_path, detail=True) == localfs.find(
-        tmp_path, detail=True
-    )
+    assert fs.find(tmp_path, detail=False) == localfs.find(tmp_path, detail=False)
+    assert fs.find(tmp_path, detail=True) == localfs.find(tmp_path, detail=True)
 
     assert fs.isfile(tmp_path / "foo")
     assert fs.isdir(tmp_path / "dir")
