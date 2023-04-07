@@ -18,9 +18,7 @@ class Store(dict):
     def new_child(self, paths: Iterable[str]) -> None:
         self.set(paths, type(self)(paths=paths))
 
-    def set(
-        self, paths: Iterable[str], value: Any, overwrite: bool = False
-    ) -> None:
+    def set(self, paths: Iterable[str], value: Any, overwrite: bool = False) -> None:
         if not paths:
             raise ValueError("no path supplied")
 
@@ -31,9 +29,7 @@ class Store(dict):
             raise ValueError("cannot overwrite - item exists")
         child[key] = value
 
-    def get(  # type: ignore[override]
-        self, paths: Iterable[str]
-    ) -> "ContainerOrFile":
+    def get(self, paths: Iterable[str]) -> "ContainerOrFile":  # type: ignore[override]
         child = self
         for path in paths:
             child = child[path]
@@ -67,18 +63,14 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         path = path.lstrip("/").rstrip("/")
         return "/" + path if path else cls.root_marker
 
-    def __init__(self, store: Store = None) -> None:
+    def __init__(self, store: Optional[Store] = None) -> None:
         super().__init__()
         if store is None:
             store = Store()
         self.store = store
 
     def _info(
-        self,
-        path: str,
-        item: ContainerOrFile,
-        file: bool = False,
-        **kwargs: Any
+        self, path: str, item: ContainerOrFile, file: bool = False, **kwargs: Any
     ) -> Dict[str, Any]:
         if isinstance(item, dict):
             return {"name": path, "size": 0, "type": "directory"}
@@ -135,8 +127,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         if not detail:
             return [self.join_paths((*paths, key)) for key, _ in entries]
         return [
-            self._info(self.join_paths((*paths, key)), value)
-            for key, value in entries
+            self._info(self.join_paths((*paths, key)), value) for key, value in entries
         ]
 
     def _rm(self, path: str) -> None:
@@ -260,7 +251,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         self,
         path: Union[str, List[str]],
         recursive: bool = False,
-        maxdepth: int = None,
+        maxdepth: Optional[int] = None,
     ) -> None:
         if isinstance(path, str):
             paths = [path]

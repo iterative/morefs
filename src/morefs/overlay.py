@@ -9,13 +9,12 @@ import fsspec
 class OverlayFileSystem(fsspec.AbstractFileSystem):
     cachable = False
 
-    def __init__(self, *fses, **kwargs):
+    def __init__(self, *fses: fsspec.AbstractFileSystem, **kwargs):
         storage_options = {
-            key: value
-            for key, value in kwargs.items()
-            if key.startswith("fs_")
+            key: value for key, value in kwargs.items() if key.startswith("fs_")
         }
         self.fses: List[fsspec.AbstractFileSystem] = list(fses)
+        self.fses.extend(kwargs.pop("filesystems", []))
         for proto, options in kwargs.items():
             if proto.startswith("fs_"):
                 continue
@@ -79,21 +78,17 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
     def _raise_readonly(path, *args, **kwargs):
         raise OSError(errno.EROFS, os.strerror(errno.EROFS), path)
 
-    info = _iterate_fs_with("info")
-    created = _iterate_fs_with("created")
-    modified = _iterate_fs_with("modified")
+    info = _iterate_fs_with("info")  # pylint: disable=no-value-for-parameter
+    created = _iterate_fs_with("created")  # pylint: disable=no-value-for-parameter
+    modified = _iterate_fs_with("modified")  # pylint: disable=no-value-for-parameter
 
     def mkdir(self, path, create_parents=True, **kwargs):
         # if create_parents is False:
         if self.exists(path):
-            raise FileExistsError(
-                errno.EEXIST, os.strerror(errno.EEXIST), path
-            )
+            raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), path)
         parent = self._parent(path)
         if not create_parents and not self.isdir(parent):
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), path
-            )
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
         self.upper_fs.mkdir(path, create_parents=True, **kwargs)
 
     def makedirs(self, path, exist_ok=False):
@@ -113,18 +108,14 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
                 break
 
         if not src_fs:
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), path1
-            )
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path1)
         if src_fs == self.upper_fs:
             return src_fs.cp_file(path1, path2)
 
         with src_fs.open(path1) as src, self.upper_fs.open(path2, "wb") as dst:
             shutil.copyfileobj(src, dst)
 
-    def _open(
-        self, path, mode="rb", **kwargs
-    ):  # pylint: disable=arguments-differ
+    def _open(self, path, mode="rb", **kwargs):  # pylint: disable=arguments-differ
         if "rb" in mode:
             for fs in self.fses:
                 try:
@@ -165,3 +156,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):
 
     def sign(self, path, expiration=100, **kwargs):
         return self.upper_fs.sign(path, expiration, **kwargs)
+
+    if hasattr(fsspec.AbstractFileSystem, "fsid"):
+
+        @property
+        def fsid(self):
+            return "overlay_" + "+".join(fs.fsid for fs in self.fses)

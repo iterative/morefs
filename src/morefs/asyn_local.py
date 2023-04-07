@@ -59,9 +59,7 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
     _write_text = wrap(LocalFileSystem.write_text)
     sign = LocalFileSystem.sign
 
-    async def _get_file(
-        self, src, dst, **kwargs
-    ):  # pylint: disable=arguments-renamed
+    async def _get_file(self, src, dst, **kwargs):  # pylint: disable=arguments-renamed
         if not iscoroutinefunction(getattr(dst, "write", None)):
             src = self._strip_protocol(src)
             return await self._get_file_async(src, dst)
