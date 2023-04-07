@@ -34,14 +34,11 @@ morefs
 Features
 --------
 
-* TODO
-
-
-Requirements
-------------
-
-* TODO
-
+*morefs* provides standalone fsspec-based filesystems like:
+# ``AsyncLocalFileSystem`` that provides async implementation of ``LocalFileSystem``.
+# In-memory filesystems ``DictFileSystem`` built on nested dictionaries and ``MemFS`` built on tries,
+and are much faster than fsspec's ``MemoryFileSystem``.
+# ``OverlayFileSystem`` that allows to overlay multiple fsspec-based filesystems.
 
 Installation
 ------------
@@ -52,9 +49,77 @@ You can install *morefs* via pip_ from PyPI_:
 
    $ pip install morefs
 
+You might need to install with extras for some filesystems:
+
+.. code:: console
+
+   $ pip install morefs[asynclocal]  # for installing aiofile dependency for AsyncLocalFileSystem
+   $ pip install morefs[memfs]  # for installing pygtrie dependency for MemFS
+
 
 Usage
 -----
+
+AsyncLocalFileSystem
+~~~~~~~~~~~~~~~~~~~~
+
+Extended version of ``LocalFileSystem`` that also provides async methods.
+
+.. code:: python
+
+    import asyncio
+    from morefs.asyn_local import AsyncLocalFileSystem
+
+    async def main():
+        fs = AsyncLocalFileSystem(auto_mkdir=False)
+
+        async with fs.open_async("foo", mode="w") as f:
+            await f.write("foobar")
+
+        content = await fs._cat("foo")
+        print(content)
+        print(fs.cat("foo"))  # you can still use sync methods
+
+    asyncio.run(main())
+
+
+DictFS
+~~~~~~
+
+DictFS is a nested dictionary-based, in-memory filesystem
+and acts more like a real LocalFileSystem.
+
+.. code:: python
+
+    from morefs.dictfs import DictFileSystem
+
+    fs = DictFileSystem()
+
+
+MemFS
+~~~~~
+
+MemFS is a trie-based in-memory filesystem, and acts like a bucket storage.
+
+.. code:: python
+
+    from morefs.memfs import MemFS
+
+    fs = MemFS()
+
+
+OverlayFileSystem
+~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    from morefs.overlay import OverlayFileSystem
+
+    # use localfilesystem for write, overlay all filesystems for read
+    fs = OverlayFileSystem(file={"auto_mkdir": True}, s3={"anon": True})
+    # or you can pass filesystem instances directly
+    # as variable positional arguments or with keyword argument `filesystems=[]`
+    fs = OverlayFileSystem(LocalFileSystem(), s3={"anon": True})
 
 
 Contributing
