@@ -78,14 +78,17 @@ def test_sync_methods(tmp_path, localfs, fs):
 
 @pytest.mark.asyncio
 async def test_open_async(tmp_path, fs):
-    async with fs.open_async(tmp_path / "file", mode="wb") as f:
+    f = await fs.open_async(tmp_path / "file", mode="wb")
+    async with f:
         pass
     assert await fs._exists(tmp_path / "file")
 
-    async with fs.open_async(tmp_path / "file", mode="wb") as f:
+    f = await fs.open_async(tmp_path / "file", mode="wb")
+    async with f:
         assert await f.write(b"contents")
 
-    async with fs.open_async(tmp_path / "file") as f:
+    f = await fs.open_async(tmp_path / "file")
+    async with f:
         assert await f.read() == b"contents"
 
 
@@ -96,7 +99,8 @@ async def test_get_file(tmp_path, fs):
 
     assert await fs._isfile(tmp_path / "bar")
 
-    async with fs.open_async(tmp_path / "file1", mode="wb") as f:
+    f = await fs.open_async(tmp_path / "file1", mode="wb")
+    async with f:
         await fs._get_file(tmp_path / "foo", f)
     assert await fs._cat_file(tmp_path / "file1") == b"foo"
 
@@ -112,7 +116,8 @@ async def test_get_file(tmp_path, fs):
 @pytest.mark.asyncio
 async def test_auto_mkdir_on_open_async(tmp_path):
     fs = AsyncLocalFileSystem(auto_mkdir=True)
-    async with fs.open_async(tmp_path / "dir" / "file", mode="wb") as f:
+    f = await fs.open_async(tmp_path / "dir" / "file", mode="wb")
+    async with f:
         await f.write(b"contents")
 
     assert await fs._isdir(tmp_path / "dir")
