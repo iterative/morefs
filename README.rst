@@ -73,7 +73,8 @@ Extended version of ``LocalFileSystem`` that also provides async methods.
     async def main():
         fs = AsyncLocalFileSystem(auto_mkdir=False)
 
-        async with fs.open_async("foo", mode="w") as f:
+        f = await fs.open_async("foo", mode="w")
+        async with f:
             await f.write("foobar")
 
         content = await fs._cat("foo")
