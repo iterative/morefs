@@ -6,7 +6,7 @@ from typing import List
 import fsspec
 
 
-class OverlayFileSystem(fsspec.AbstractFileSystem):
+class OverlayFileSystem(fsspec.AbstractFileSystem):  # pylint: disable=abstract-method
     cachable = False
 
     def __init__(self, *fses: fsspec.AbstractFileSystem, **kwargs):

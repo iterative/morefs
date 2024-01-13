@@ -1,7 +1,6 @@
 import shutil
 import sys
 from asyncio import get_running_loop, iscoroutinefunction
-from contextlib import asynccontextmanager
 from functools import partial, wraps
 from typing import Awaitable, Callable, TypeVar
 
@@ -83,18 +82,16 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
             src = self._strip_protocol(src)
             return await self._get_file_async(src, dst)
 
-        async with self.open_async(src, "rb") as fsrc:
+        fsrc = await self.open_async(src, "rb")
+        async with fsrc:
             while True:
                 buf = await fsrc.read(length=shutil.COPY_BUFSIZE)
                 if not buf:
                     break
                 await dst.write(buf)
 
-    @asynccontextmanager
     async def open_async(self, path, mode="rb", **kwargs):
         path = self._strip_protocol(path)
         if self.auto_mkdir and "w" in mode:
             await self._makedirs(self._parent(path), exist_ok=True)
-
-        async with aiofile.async_open(path, mode, **kwargs) as f:
-            yield f
+        return await aiofile.async_open(path, mode, **kwargs)
