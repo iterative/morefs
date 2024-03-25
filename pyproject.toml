@@ -2,30 +2,70 @@
 requires = ["setuptools>=48", "setuptools_scm[toml]>=6.3.1"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "morefs"
+description = "A collection of self-contained fsspec-based filesystems"
+readme = "README.rst"
+license = {text = "Apache-2.0"}
+authors = [{name = "Iterative", email = "saugat@iterative.ai"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Development Status :: 4 - Beta"
+]
+requires-python = ">=3.8"
+dynamic = ["version"]
+dependencies = [
+  "fsspec"
+]
+
+[project.urls]
+Issues = "https://github.com/iterative/morefs/issues"
+Source = "https://github.com/iterative/morefs"
+
+[project.optional-dependencies]
+memfs = [
+  "pygtrie>=2.3.2"
+]
+asynclocalfs = [
+  "fsspec>=2022.10.0",
+  "typing_extensions>=3.10.0; python_version < '3.10'",
+  "aiofile>=3.8.5,<4"
+]
+asynclocal = [
+  "morefs[asynclocalfs]"
+]
+all = [
+  "morefs[memfs,asynclocalfs]"
+]
+tests = [
+  "morefs[all]",
+  "pytest>=7,<9",
+  "pytest-asyncio>=0.21.0,<1",
+  "pytest-cov>=4.1.0",
+  "pytest-mock",
+  "pytest-sugar"
+]
+dev = [
+  "morefs[tests,all]",
+  "mypy==1.9.0"
+]
+
+[project.entry-points."fsspec.specs"]
+memfs = "morefs.memory:MemFS"
+dictfs = "morefs.dict:DictFS"
+overlayfs = "morefs.overlay:OverlayFileSystem"
+asynclocal = "morefs.asyn_local:AsyncLocalFileSystem"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
 [tool.setuptools_scm]
-
-[tool.black]
-line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
-
-[tool.isort]
-profile = "black"
-known_first_party = ["morefs"]
-line_length = 88
 
 [tool.pytest.ini_options]
 addopts = "-ra"
@@ -40,13 +80,13 @@ source = ["src", "*/site-packages"]
 [tool.coverage.report]
 show_missing = true
 exclude_lines = [
-    "pragma: no cover",
-    "if __name__ == .__main__.:",
-    "if typing.TYPE_CHECKING:",
-    "if TYPE_CHECKING:",
-    "raise NotImplementedError",
-    "raise AssertionError",
-    "@overload",
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "if typing.TYPE_CHECKING:",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "raise AssertionError",
+  "@overload"
 ]
 
 [tool.mypy]
@@ -64,26 +104,88 @@ warn_unreachable = true
 ignore_missing_imports = true
 files = ["src", "tests"]
 
-[tool.pylint.format]
-max-line-length = 88
-
-[tool.pylint.message_control]
-disable = [
-    "format", "refactoring", "spelling", "design", "invalid-name",
-    "unused-wildcard-import", "cyclic-import", "wrong-import-order",
-    "wrong-import-position", "ungrouped-imports", "multiple-imports",
-    "missing-function-docstring", "missing-module-docstring",
-    "missing-class-docstring",
-]
-enable = ["c-extension-no-member", "no-else-return"]
-
-[tool.pylint.variables]
-dummy-variables-rgx = "_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_"
-ignored-argument-names = "_.*|^ignored_|^unused_|args|kwargs"
-
 [tool.codespell]
 ignore-words-list = "fo,cachable,afile"
 
-[tool.bandit]
-exclude_dirs = ["tests"]
-skips = ["B101"]
+[tool.ruff]
+output-format = "full"
+show-fixes = true
+
+[tool.ruff.lint]
+ignore = [
+  "N818",
+  "S101",
+  "ISC001",
+  "PT004",
+  "PT007",
+  "RET502",
+  "RET503",
+  "SIM105",
+  "SIM108",
+  "SIM117",
+  "TRY003",
+  "TRY300",
+  "PLR2004",
+  "PLW2901",
+  "LOG007"
+]
+select = [
+  "F",
+  "E",
+  "W",
+  "C90",
+  "I",
+  "N",
+  "UP",
+  "YTT",
+  "ASYNC",
+  "S",
+  "BLE",
+  "B",
+  "A",
+  "C4",
+  "T10",
+  "EXE",
+  "ISC",
+  "ICN",
+  "G",
+  "INP",
+  "PIE",
+  "T20",
+  "PYI",
+  "PT",
+  "Q",
+  "RSE",
+  "RET",
+  "SLOT",
+  "SIM",
+  "TID",
+  "TCH",
+  "ARG",
+  "PGH",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "TRY",
+  "FLY",
+  "PERF101",
+  "LOG",
+  "RUF"
+]
+
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+parametrize-names-type = "csv"
+
+[tool.ruff.lint.per-file-ignores]
+"noxfile.py" = ["D", "PTH"]
+"tests/**" = ["S", "ARG001", "ARG002", "ANN"]
+"docs/**" = ["INP"]
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true

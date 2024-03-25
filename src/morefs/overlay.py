@@ -134,7 +134,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):  # pylint: disable=abstract-
                 info = self.upper_fs.info(path)
                 if info["type"] == "directory":
                     raise IsADirectoryError(
-                        errno.EISDIR, os.strerror(errno.EISDIR), path
+                        errno.EISDIR,
+                        os.strerror(errno.EISDIR),
+                        path,
                     )
             except FileNotFoundError as exc:
                 for fs in self.fses[1:]:
@@ -142,7 +144,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):  # pylint: disable=abstract-
                         info = fs.info(path)
                         if info["type"] == "directory":
                             raise IsADirectoryError(
-                                errno.EISDIR, os.strerror(errno.EISDIR), path
+                                errno.EISDIR,
+                                os.strerror(errno.EISDIR),
+                                path,
                             ) from exc
                         return self._raise_readonly(path)
                     except (

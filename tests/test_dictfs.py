@@ -2,7 +2,6 @@ import errno
 from unittest.mock import ANY
 
 import pytest
-
 from morefs.dict import DictFS
 
 
@@ -127,7 +126,7 @@ def test_try_rmdir_file(dfs):
 def test_try_rmdir_non_empty_directory(dfs):
     dfs.mkdir("/dir")
     dfs.touch("/dir/afile")
-    with pytest.raises(OSError) as exc:
+    with pytest.raises(OSError) as exc:  # noqa: PT011
         dfs.rmdir("/dir")
     assert exc.value.errno == errno.ENOTEMPTY
 
