@@ -2,7 +2,6 @@ from os import fspath
 from unittest.mock import ANY
 
 import pytest
-
 from morefs.memory import MemFS
 
 

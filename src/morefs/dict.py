@@ -70,7 +70,11 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         self.store = store
 
     def _info(
-        self, path: str, item: ContainerOrFile, file: bool = False, **kwargs: Any
+        self,
+        path: str,
+        item: ContainerOrFile,
+        file: bool = False,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         if isinstance(item, dict):
             return {"name": path, "size": 0, "type": "directory"}
@@ -205,14 +209,14 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
                 if not exist_ok:
                     raise
 
-    def _open(
+    def _open(  # noqa: PLR0913
         self,
         path: str,
         mode: str = "rb",
-        block_size=None,
-        autocommit=True,
-        cache_options=None,
-        **kwargs
+        block_size=None,  # noqa: ARG002
+        autocommit=True,  # noqa: ARG002
+        cache_options=None,  # noqa: ARG002
+        **kwargs,
     ) -> "DictFile":
         paths = self.path_parts(path)
         normpath = self.join_paths(paths)

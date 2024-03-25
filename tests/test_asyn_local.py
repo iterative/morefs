@@ -2,7 +2,6 @@ from os import fspath
 
 import pytest
 from fsspec.implementations.local import LocalFileSystem
-
 from morefs.asyn_local import AsyncLocalFileSystem
 
 
@@ -37,7 +36,8 @@ async def test_ls(tmp_path, localfs, fs):
     assert await fs._ls(tmp_path, detail=True) == localfs.ls(tmp_path, detail=True)
 
     assert await fs._find(tmp_path, detail=False) == localfs.find(
-        tmp_path, detail=False
+        tmp_path,
+        detail=False,
     )
     assert await fs._find(tmp_path, detail=True) == localfs.find(tmp_path, detail=True)
 
