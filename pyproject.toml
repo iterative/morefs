@@ -48,7 +48,14 @@ tests = [
   "pytest-asyncio>=0.21.0,<1",
   "pytest-cov>=4.1.0",
   "pytest-mock",
+<<<<<<<
   "pytest-sugar"
+=======
+  "pytest-sugar==0.9.5",
+  "pytest-cov==3.0.0",
+  "pytest-mock==3.8.2",
+  "mypy==1.9.0"
+>>>>>>>
 ]
 dev = [
   "morefs[tests,all]",
@@ -108,6 +115,16 @@ files = ["src", "tests"]
 ignore-words-list = "fo,cachable,afile"
 
 [tool.ruff]
+<<<<<<<
+=======
+output-format = "full"
+show-fixes = true
+
+[tool.ruff.lint]
+ignore = [
+  "S101",  # assert
+  "PLR2004",  # magic-value-comparison
+>>>>>>>
 output-format = "full"
 show-fixes = true
 
@@ -178,9 +195,15 @@ select = [
 ignore-variadic-names = true
 
 [tool.ruff.lint.flake8-pytest-style]
+<<<<<<<
 fixture-parentheses = false
 mark-parentheses = false
 parametrize-names-type = "csv"
+=======
+  "D213"  # multi-line-summary-second-line
+]
+select = ["ALL"]
+>>>>>>>
 
 [tool.ruff.lint.per-file-ignores]
 "noxfile.py" = ["D", "PTH"]
