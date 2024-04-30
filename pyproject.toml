@@ -52,7 +52,7 @@ tests = [
 ]
 dev = [
   "morefs[tests,all]",
-  "mypy==1.9.0"
+  "mypy==1.10.0"
 ]
 
 [project.entry-points."fsspec.specs"]
