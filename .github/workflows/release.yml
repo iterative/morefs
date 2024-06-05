@@ -21,15 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.10
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
+          cache: 'pip'
 
-      - name: Upgrade pip and nox
+      - name: Upgrade nox
         run: |
-          pip install --upgrade pip nox
-          pip --version
+          python -m pip install --upgrade 'nox[uv]'
           nox --version
 
       - name: Build package

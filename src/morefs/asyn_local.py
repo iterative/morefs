@@ -63,7 +63,11 @@ class AsyncLocalFileSystem(AsyncFileSystem, LocalFileSystem):
     _makedirs = wrap(LocalFileSystem.makedirs)
     _mkdir = wrap(LocalFileSystem.mkdir)
     _modified = wrap(LocalFileSystem.modified)
-    _mv_file = wrap(LocalFileSystem.mv_file)
+
+    # `mv_file` was renamed to `mv` in fsspec==2024.5.0
+    # https://github.com/fsspec/filesystem_spec/pull/1585
+    _mv = wrap(getattr(LocalFileSystem, "mv", None) or LocalFileSystem.mv_file)  # type: ignore[call-overload]
+    _mv_file = _mv
     _pipe_file = wrap(LocalFileSystem.pipe_file)
     _put_file = wrap(LocalFileSystem.put_file)
     _read_bytes = wrap(LocalFileSystem.read_bytes)
