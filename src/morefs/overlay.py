@@ -78,9 +78,9 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):  # pylint: disable=abstract-
     def _raise_readonly(path, *args, **kwargs):
         raise OSError(errno.EROFS, os.strerror(errno.EROFS), path)
 
-    info = _iterate_fs_with("info")  # pylint: disable=no-value-for-parameter
-    created = _iterate_fs_with("created")  # pylint: disable=no-value-for-parameter
-    modified = _iterate_fs_with("modified")  # pylint: disable=no-value-for-parameter
+    info = _iterate_fs_with.__get__(object)("info")
+    created = _iterate_fs_with.__get__(object)("created")
+    modified = _iterate_fs_with.__get__(object)("modified")
 
     def mkdir(self, path, create_parents=True, **kwargs):
         # if create_parents is False:
