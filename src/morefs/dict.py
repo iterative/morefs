@@ -209,7 +209,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
                 if not exist_ok:
                     raise
 
-    def _open(  # noqa: PLR0913
+    def _open(
         self,
         path: str,
         mode: str = "rb",
