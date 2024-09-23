@@ -2,6 +2,7 @@ import errno
 from unittest.mock import ANY
 
 import pytest
+
 from morefs.dict import DictFS
 
 

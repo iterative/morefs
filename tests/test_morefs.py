@@ -2,6 +2,7 @@
 
 import fsspec
 import pytest
+
 from morefs.dict import DictFS
 from morefs.memory import MemFS
 
