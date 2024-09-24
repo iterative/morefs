@@ -2,6 +2,7 @@ from os import fspath
 
 import pytest
 from fsspec.implementations.local import LocalFileSystem
+
 from morefs.asyn_local import AsyncLocalFileSystem
 
 
