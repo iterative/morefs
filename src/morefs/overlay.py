@@ -1,7 +1,6 @@
 import errno
 import os
 import shutil
-from typing import List
 
 import fsspec
 
@@ -13,7 +12,7 @@ class OverlayFileSystem(fsspec.AbstractFileSystem):  # pylint: disable=abstract-
         storage_options = {
             key: value for key, value in kwargs.items() if key.startswith("fs_")
         }
-        self.fses: List[fsspec.AbstractFileSystem] = list(fses)
+        self.fses: list[fsspec.AbstractFileSystem] = list(fses)
         self.fses.extend(kwargs.pop("filesystems", []))
         for proto, options in kwargs.items():
             if proto.startswith("fs_"):

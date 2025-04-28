@@ -1,8 +1,9 @@
 import shutil
 import sys
 from asyncio import get_running_loop, iscoroutinefunction
+from collections.abc import Awaitable
 from functools import partial, wraps
-from typing import Awaitable, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import aiofile
 from fsspec.asyn import AsyncFileSystem

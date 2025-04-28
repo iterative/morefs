@@ -1,13 +1,14 @@
 import errno
 import os
+from collections.abc import Iterable
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from fsspec import AbstractFileSystem
 from fsspec.implementations.memory import MemoryFile
 
-ContainerOrFile = Union[Dict[str, Dict], "DictFile"]
+ContainerOrFile = Union[dict[str, dict], "DictFile"]
 
 
 class Store(dict):
@@ -75,7 +76,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         item: ContainerOrFile,
         file: bool = False,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if isinstance(item, dict):
             return {"name": path, "size": 0, "type": "directory"}
         assert isinstance(item, DictFile)
@@ -83,7 +84,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
 
     @classmethod
     @lru_cache(maxsize=1000)
-    def path_parts(cls, path: str) -> Tuple[str, ...]:
+    def path_parts(cls, path: str) -> tuple[str, ...]:
         path = cls._strip_protocol(path)
         if path == "/":
             return ()
@@ -92,12 +93,12 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
 
     @classmethod
     @lru_cache(maxsize=1000)
-    def join_paths(cls, paths: Tuple[str, ...]) -> str:
+    def join_paths(cls, paths: tuple[str, ...]) -> str:
         if not paths:
             return cls.root_marker
         return cls.sep.join([cls.root_marker, *paths])
 
-    def info(self, path: str, **kwargs: Any) -> Dict[str, Any]:
+    def info(self, path: str, **kwargs: Any) -> dict[str, Any]:
         paths = self.path_parts(path)
         normpath = self.join_paths(paths)
         try:
@@ -124,7 +125,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
                 return [normpath]
             return [self._info(normpath, item)]
 
-        entries: Iterable[Tuple[str, ContainerOrFile]] = item.items()
+        entries: Iterable[tuple[str, ContainerOrFile]] = item.items()
         if kwargs.get("sort"):
             entries = sorted(entries)
 
@@ -142,7 +143,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
             raise oserror(errno.EISDIR, normpath)
         return self._rm_paths(paths)
 
-    def _rm_paths(self, paths: Tuple[str, ...]) -> None:
+    def _rm_paths(self, paths: tuple[str, ...]) -> None:
         normpath = self.join_paths(paths)
         try:
             self.store.delete(paths)
@@ -178,7 +179,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
             return self.makedirs(path, exist_ok=True)
         self._mkdir_paths(paths)
 
-    def _mkdir_paths(self, paths: Tuple[str, ...]) -> None:
+    def _mkdir_paths(self, paths: tuple[str, ...]) -> None:
         normpath = self.join_paths(paths)
         try:
             self.store.new_child(paths)
@@ -253,7 +254,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
 
     def rm(
         self,
-        path: Union[str, List[str]],
+        path: Union[str, list[str]],
         recursive: bool = False,
         maxdepth: Optional[int] = None,
     ) -> None:
@@ -293,7 +294,7 @@ class DictFile(MemoryFile):
         except KeyError as exc:
             raise oserror(errno.ENOENT, self.path) from exc
 
-    def to_json(self, file: bool = False) -> Dict[str, Any]:
+    def to_json(self, file: bool = False) -> dict[str, Any]:
         details = {
             "name": self.path,
             "size": self.size,
