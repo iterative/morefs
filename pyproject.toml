@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "morefs"
 description = "A collection of self-contained fsspec-based filesystems"
 readme = "README.rst"
-license = {text = "Apache-2.0"}
-authors = [{name = "Iterative", email = "saugat@iterative.ai"}]
+license = { text = "Apache-2.0" }
+authors = [{ name = "Iterative", email = "saugat@iterative.ai" }]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
