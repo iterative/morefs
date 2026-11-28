@@ -3,7 +3,7 @@ import os
 from collections.abc import Iterable
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from fsspec import AbstractFileSystem
 from fsspec.implementations.memory import MemoryFile
@@ -64,7 +64,7 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         path = path.lstrip("/").rstrip("/")
         return "/" + path if path else cls.root_marker
 
-    def __init__(self, store: Optional[Store] = None) -> None:
+    def __init__(self, store: Store | None = None) -> None:
         super().__init__()
         if store is None:
             store = Store()
@@ -249,14 +249,14 @@ class DictFS(AbstractFileSystem):  # pylint: disable=abstract-method
         file = DictFile(self, path2, src.getvalue())  # implicit copy
         file.commit()
 
-    def created(self, path: str) -> Optional[datetime]:
+    def created(self, path: str) -> datetime | None:
         return self.info(path).get("created")
 
     def rm(
         self,
-        path: Union[str, list[str]],
+        path: str | list[str],
         recursive: bool = False,
-        maxdepth: Optional[int] = None,
+        maxdepth: int | None = None,
     ) -> None:
         if isinstance(path, str):
             paths = [path]

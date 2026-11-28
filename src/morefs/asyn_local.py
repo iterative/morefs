@@ -1,18 +1,12 @@
 import shutil
-import sys
 from asyncio import get_running_loop, iscoroutinefunction
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from functools import partial, wraps
-from typing import Callable, TypeVar
+from typing import ParamSpec, TypeVar
 
 import aiofile
 from fsspec.asyn import AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
-
-if sys.version_info < (3, 10):  # pragma: no cover
-    from typing_extensions import ParamSpec
-else:  # pragma: no cover
-    from typing import ParamSpec
 
 P = ParamSpec("P")
 R = TypeVar("R")
